@@ -1,3 +1,16 @@
+
+################################################## Creating the model ##################################################
+
+########################################################################################################################
+### the linear model is the best fit line among our points, this is the line where the sum of the squared distance   ###
+### of each point is minimized (basically the line that is on average closer to each data point) This is always      ###
+### calculated with the use of software, but it is useful to know this is derived from calculating where the         ###
+### derivative is close to 0 (minimum of the function of the equation of the sum of the distances).                  ###
+### (In more complicated models, where the gradient cannot be calculated easily, gradient decent is often used for   ###
+### optimizing the model, where a local minimum is instead found)                                                    ###
+########################################################################################################################
+
+# libraries
 install.packages("MASS")
 install.packages("ISLR")
 library(MASS)
@@ -134,7 +147,7 @@ confint(lm.RmFit)
 ### That is because not only do they depend on the mean error but also the individual random e error y=f(x)+e        ###
 ########################################################################################################################
 
-#we can see that the prediction intervals are wider when comparing them in R
+# we can see that the prediction intervals are wider when comparing them in R
 predict(lm.RmFit, newdata = list(rm = 8), interval = "confidence")
 predict(lm.RmFit, newdata = list(rm = 8), interval = "prediction")
 
@@ -157,3 +170,37 @@ PredictRight <- yForX(8) + t * SEpedY
 PredictRight
 
 # left and right matches the prediction intervals given by R
+
+####################################################### Outliers #######################################################
+
+########################################################################################################################
+### points that are far from the predicted y values (maybe due to errors in taking the measurements or very          ### 
+### extreme/special cases) they may not always massively affect the best fit line, however they could have a         ###
+### significant effect in the calculations of errors because they are very far from the predicted y, the R-squared   ### 
+### value will decreased if we had more information about the data and how it was gathered or maybe additional       ###
+### domain knowledge to interpret the outcomes, we could potentially just remove them or adjust them towards the     ###
+### mean.                                                                                                            ###
+########################################################################################################################
+
+
+# we can see a few of them in the plot
+plot(Boston$rm, Boston$medv)
+abline(lm.RmFit, col = "red") 
+
+# simple way to find outliers on a set of a single variable is the univariate approach. Outliers are defined as
+# values bellow or above 1.5*IQR (Inter Quartile Range = Q3 -Q1)
+# we can visualise that in a boxplot where everything out of the whiskers is treated as an outlier
+boxplot(Boston$rm)
+# we can list them using the following code
+outlier_values <- boxplot.stats(Boston$rm)$out
+
+# there are also a few multivariant approaches in defining outliers. For example the Cooks Distance which measures
+# the influence of a row on the sample to the line. In general, points that have about 4 times the mean may be
+# classified as influential. Those are also called leverage points, they may not affect the R-square value as much as
+# other outlier but affect the fit of the regression line
+
+#we can calculate them in R using the following code, for 2 or more variables
+cooksd <- cooks.distance(lm.RmFit)
+influential <- as.numeric(names(cooksd)[(cooksd > 4*mean(cooksd, na.rm=T))]) 
+BostonSubSet <- c(Boston$rm, Boston$medv)
+BostonSubSet[influential ]
