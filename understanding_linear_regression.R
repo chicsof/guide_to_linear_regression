@@ -79,6 +79,9 @@ lm.fitAll <- lm(medv~., data = Boston)
 # We can see that the model now described about 74% of the variation, using a couple more significant coefficients, such
 # as crime in the area, taxes and so on.
 summary(lm.fitAll)
+# we should note that a multivariate model is far superior than regressing each predictor with the price using
+# individual models, since a change in price could be the result of other predictors or combinations of predictors.
+# Separate models could result in inaccurate calculations of significant coefficients.
 
 ################################################# CONFIDENCE INTERVALS #################################################
 
@@ -321,4 +324,49 @@ install.packages("car")
 library(car)
 vif(lm.fitAll)
 
-############################################ Interaction terms #######################################################
+################################################## Interaction terms ###################################################
+
+########################################################################################################################
+### Interaction terms just refers to the effect that certain combinations of predictors can have on the y. Sometimes ###
+### we can optimize our regression model by accounting for the effect of predictor combinations, we can add their    ###
+### products multiplied by a coefficient that shows the effect of the combination ( y = a + bx1 +cx2 + dx1x2 + e). A ###
+### good example of where this is useful is the synergy effect, studied when analysing the effects of advertising    ###
+### using deferent means (TV, web, redio ...). It was found that it was most effective to spread the advertising     ###
+### budget across multiple means, rather than focusing it on the most profitable one. To measure such affects,       ###
+### interaction terms are necessary                                                                                  ###
+########################################################################################################################
+
+# Simple way to do this in R for interaction of crim and tax
+lm.simpleInteraction <- lm(medv~ crim + tax + crim*tax, data = Boston)
+# We get the coefficient of the interaction and its significance the same way we get any other coefficient
+summary(lm.simpleInteraction)
+# Easier way to write the above
+lm.simpleInteraction2 <- lm(medv~crim*tax, data = Boston)
+summary(lm.simpleInteraction2)
+# This returns all two-way interactions
+lm.allPairsInteractions <- lm(medv~ .*., data = Boston)
+# We can see that the R-squared when using the 2-way interactions has increased
+summary(lm.allPairsInteractions)
+# Lets try and explain some of the significant interactions found:
+#  * Combination of chas(close to river) and nox(greenery), that combination may indicate that the house is build in a
+#    very graphical area and therefore more expensive
+#  * crim (criminal activity) and lstat (%lower status of population) may indicate how degraded an area is and therefore
+#    less expensive
+#  * rm (room per dwelling) and age, that combination may explain a lot of the variance in our dataset since, most
+#    recent houses tend to have less space yet are more expensive due to modern equipment and built
+
+# We need to consider which interactions are more significant and make the most sence from domain knowledge. Also keep
+# in mind that we need to sustain an efficient and realistic model, not just a model with a very good R squared value.
+
+
+####################################### Non-linear transformations of predictors #######################################
+
+    #
+   ##
+  # #
+ #  # # # # # # # # # # # # # # #
+#       To Be Continued #   #   #  https://www.youtube.com/watch?v=cPCLFtxpadE
+ #  # # # # # # # # # # # # # # #
+  # #
+   ##
+    #
