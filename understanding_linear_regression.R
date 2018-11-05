@@ -87,10 +87,10 @@ summary(lm.fitAll)
 
 ########################################################################################################################
 ### this is important in order to determine if a coefficient is significant (far enough from zero b !=0) so that     ###
-### we can assume the attribute is a predictor (y = bx...).Since  we are only using a sample to draw our conclusions ###
-### we need to account some error before making that conclusion. Confidence intervals can measure the range for the  ###
-### true mean/expected value (y given by the regression) of the population we are studying with a given % accuracy   ###
-### for each x                                                                                                       ###
+### we can assume the attribute is a predictor (y = bx...).Since  we are only using a sample to find the mean (best  ###
+### fit line) we need to account for some error. Confidence intervals can measure the range for the true mean        ###
+### of the population we are studying (or expected value of y given by the regression) with a given % accuracy       ###
+### for each x. **They help us find a range at which the true regression line (mean) of the population whould be.**  ###
 ########################################################################################################################
 
 # The intercept and coefficient are approximated using a sample of nrow(Boston) samples
@@ -171,6 +171,70 @@ PredictRight <- yForX(8) + t * SEpedY
 PredictRight
 
 # Left and right matches the prediction intervals given by R
+
+######################we can plot prediction and confidence intervals
+install.packages('ggplot2')
+library(ggplot2)
+
+ggplot(Boston, aes(x = rm, y = medv)) +
+  geom_point() +
+  geom_smooth(method = lm, se = TRUE)
+
+temp_var <- predict(lm.rm_fit, interval = "prediction")
+new_df <- cbind(Boston, temp_var)
+
+ggplot(new_df, aes(rm, medv)) +
+  geom_point() +
+  geom_line(aes(y = lwr), color = "red", linetype = "dashed") +
+  geom_line(aes(y = upr), color = "red", linetype = "dashed") +
+  geom_smooth(method = lm, se = TRUE)
+
+#the shaded aeria shows where the true regression line of the population whould be with a 95% confidence.
+#The fact that it is wider on the ages just means that the standart error for the intercept is higher than that of the
+#coeeficient of our x (rm). If we imagine moving the line along the shaded aeria we notice that the intercept changes
+#more than the slope. The line represents the mean values of y for every x, however the particular x we are studing may
+#not exacly fall into the mean. This is where the dotted red lines are usufull. 95% of the values will fall within
+#the dotted lines (prediction interval)
+
+
+################################################# Heteroscedasticity #################################################
+
+########################################################################################################################
+### One important assumption we have taken when calculating confidence and prediction intervals is that the variance ###
+### of the errors is constant (equal scatter of the data points). However the varience may chnage as the response    ###
+### (y) is changing. We have heteroscedasticity, when that change is systematic, follows a pattern. Typically, it    ###
+### produces a distinctive fan or cone shape in residual plots. It can also impact the accuracy of the coeficients   ###                                                 ###
+########################################################################################################################
+#for this example we will use the cars dataset instead, as our data does not have clear indications of heteroscedasticity
+install.packages("Ecdat")
+library(Ecdat)
+#load our data set
+data("Bwages", package = "Ecdat") 
+?Bwages
+lm.het_fit <- lm(wage ~ school, data=Males)
+#we can use the following visualizations
+#scatterplot
+#we can see a cone shape which may indicate heteroscedasticity
+plot( Bwages$edu, Bwages$wage)
+#residuals/fitted is of interest
+par(mfrow = c(2,2)) 
+plot(lm.het_fit)
+#it indicates heteroscedasticity, as there is a curve, the X values do not look random
+
+# Breusch-Pagan test for a more algorithmic aproach
+install.packages("lmtest")
+library(lmtest)
+#p value is very small so we can reject the H0, there is heteroscedasticity
+bptest(lm.het_fit)
+
+#So what do we do?? We can try and identify why this is happening, why the varience increase with the education and 
+#include this change in our model in order to optimize it
+#from domain knowledge we can say that individuals with hiegher education, have more choise in what to do. For example 
+#they may prioritize making money or having a more relaxed job.
+####to be continued
+
+
+#######################################################################################################################
 
 ####################################################### Outliers #######################################################
 
@@ -306,8 +370,13 @@ VIF <- 1 / (1 - Rsquared)
 # related ones, rooms and house age, how green the area is, criminal activity, surrounding population social/economical
 # statues and so on, that are used for predicting house price are also ideal for predicting tax 
 VIF
+# Last we can get the VIF values in R using the following code
+install.packages("car")
+library(car)
+vif(lm.fitAll)
+
 # Lets see what happens to our original line if we remove tax
-lm.fitAll2 <- update(lm.fitAll, ~ . -tax)
+lm.fitAllMinusTax <- update(lm.fitAll, ~ . -tax)
 summary(lm.fitAll)$r.squared
 summary(lm.fitAll2)$r.squared
 # The r squared has slightly gone down. However, tax is a result of factors that we have accounted (e.g location) a
@@ -319,11 +388,23 @@ summary(lm.fitAll2)$r.squared
 # Are there other factors describing the tax, that we have not included. Could we use them for the price prediction
 # instead of tax?
 
-# Last we can get the VIF values in R using the following code
-install.packages("car")
-library(car)
-vif(lm.fitAll)
-
+#Statistically, we can find out if the change in a restricted model (where a variable is removed, in this case a model
+#without tax) is significant using the F-statistic.
+#first we whould calculate the SSR (regression sum of squared errors) for the unrestricted and restricted model
+summary(lm.fitAll)
+SSRun <- anova(lm.fitAll)["Residuals","Sum Sq"]
+SSRre <- anova(lm.fitAllMinusTax)["Residuals","Sum Sq"]
+#the f stat is given by:
+n <- nrow(Boston)
+p <- length(Boston)
+Fstat <- ((SSRre - SSRun)/p) / (SSRun/(n - p - 1))
+#from the f distribution we can find a critical value that represents the point separating the curve to the rejection 
+#aeria of a=0.05 like we do with t distibution (see hypothesis testing repo)
+Fcrit <- qf(.95, p, n - p - 1)
+#the Fstat falls under the rejection aeria and so we can accept the H0, removing the tax does produce a 
+#significant change
+#we can do this in r simply using the following code
+anova(lm.fitAll, lm.fitAllMinusTax)
 ################################################## Interaction terms ###################################################
 
 ########################################################################################################################
@@ -356,10 +437,34 @@ summary(lm.allPairsInteractions)
 #    recent houses tend to have less space yet are more expensive due to modern equipment and built
 
 # We need to consider which interactions are more significant and make the most sence from domain knowledge. Also keep
-# in mind that we need to sustain an efficient and realistic model, not just a model with a very good R squared value.
-
+# in mind that we need to sustain an efficient and realistic model, not just a model with a very good R squared value
 
 ####################################### Non-linear transformations of predictors #######################################
+
+########################################################################################################################
+### A common optimization technique when dealing with lineaar regression is polynomial transformation of some the    ###
+### the predictor (e.g y = a + b*x +c*x^2). This is polynomial regression, and is still a linea model. This is use-  ###
+### full since oftenly a relationship between variables is non linear, and this may be realized using scatterplots   ###
+########################################################################################################################
+
+#lets use the example of lstat and medv
+ plot(Boston$lstat,Boston$medv)
+# we can see that the scatterplot follows a curve, wich indicates that polynomials whould be effective
+#lets compare the two
+
+lm.linearRegression <- lm(medv~ lstat, data = Boston)
+lm.PolynomialRegression <- lm(medv~ lstat + I(lstat^2), data = Boston)
+anova(lm.linearRegression, lm.PolynomialRegression)
+#the anova tested the H0 where the models both fit the data equally(as explained above). The F-satistic associated 
+#produced a very small providing enough evidence to reject the Ho. 
+
+#we can visulize this,
+newdat = data.frame(lstat = seq(min(Boston$lstat), max(Boston$lstat), length.out = 100))
+newdat$pred = predict(fit, newdata = newdat)
+plot(medv ~ lstat, data = Boston)
+with(newdat, lines(x = lstat, y = pred))
+abline(lm(medv~ lstat, data = Boston), col="red")
+#it is clear from the graph that the black line fits the data much better
 
     #
    ##
