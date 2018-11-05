@@ -31,8 +31,9 @@ library(ISLR)
 lm.rm_fit <- lm(medv~rm, data = Boston)
 # This will give as the basic information of the model
 summary(lm.rm_fit )
-# We can see that rm is of high significance, it has a very small p-value which makes for a large F-statistic
-# (this means there is only a very small probability that the H0, rm has no effect on price is true).
+# We can see that rm is of high significance, it has a very small p-value 
+# (this means there is only a very small probability that the H0, rm has no effect on price is true, see project
+# Hypothesis testing and understanding p values for more info).
 # We also get the intercept and coefficient of the fit line so we can see that the approximated line is of the form:
 # y = 9x - 35
 
@@ -69,8 +70,8 @@ rSquared
 summary(lm.rm_fit )$r.squared
 
 # If about 40% of the mean is described by the rm, the rest is various other predictors that we have not accounted for
-# and the fact that the actual relation may not exactly be fit, part of this is described by e (the unreducible error)
-# where Y(the house value) = F(x)(some function that described it ) + e (some random error).
+# and the fact that the actual relation may not exactly be linear. This is described partially by e (the unreducible
+# error) where Y(the house value) = F(x)(some function that described it ) + e (some random error).
 # To check how linear the actual relation is we can plot the graph
 plot(Boston$medv, Boston$rm)
 # So if we bring more variable we expect this to increase
