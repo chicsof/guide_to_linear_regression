@@ -86,11 +86,11 @@ summary(lm.fitAll)
 ################################################# CONFIDENCE INTERVALS #################################################
 
 ########################################################################################################################
-### this is important in order to determine if a coefficient is significant (far enough from zero b !=0) so that     ###
-### we can assume the attribute is a predictor (y = bx...).Since  we are only using a sample to find the mean (best  ###
-### fit line) we need to account for some error. Confidence intervals can measure the range for the true mean        ###
-### of the population we are studying (or expected value of y given by the regression) with a given % accuracy       ###
-### for each x. **They help us find a range at which the true regression line (mean) of the population whould be.**  ###
+### this is important in order to determine if a coefficient is significant (far enough from zero b !=0) so that we  ###
+### can assume the attribute is a predictor (y = bx...).Since  we are only using a sample to find the mean (best fit ###
+### line) we need to account for some error. Confidence intervals can measure the range for the true mean of the     ###
+### population we are studying (or expected value of y given by the regression) with a given % accuracy for each x.  ###
+###        **They help us find a range at which the true regression line (mean) of the population would be.**        ###
 ########################################################################################################################
 
 # The intercept and coefficient are approximated using a sample of nrow(Boston) samples
@@ -189,52 +189,61 @@ ggplot(new_df, aes(rm, medv)) +
   geom_line(aes(y = upr), color = "red", linetype = "dashed") +
   geom_smooth(method = lm, se = TRUE)
 
-#the shaded aeria shows where the true regression line of the population whould be with a 95% confidence.
-#The fact that it is wider on the ages just means that the standart error for the intercept is higher than that of the
-#coeeficient of our x (rm). If we imagine moving the line along the shaded aeria we notice that the intercept changes
-#more than the slope. The line represents the mean values of y for every x, however the particular x we are studing may
-#not exacly fall into the mean. This is where the dotted red lines are usufull. 95% of the values will fall within
-#the dotted lines (prediction interval)
+# The shaded area shows where the true regression line of the population would be with a 95% confidence.
+# The fact that it is wider on the ages just means that the standard error for the intercept is higher than that of the
+# coefficient of our x (rm). If we imagine moving the line along the shaded area we notice that the intercept changes
+# more than the slope. The line represents the mean values of y for every x, however the particular x we are studying
+# may not exactly fall into the mean. This is where the dotted red lines are useful. 95% of the values will fall within
+# the dotted lines (prediction interval)
 
 
 ################################################# Heteroscedasticity #################################################
 
 ########################################################################################################################
 ### One important assumption we have taken when calculating confidence and prediction intervals is that the variance ###
-### of the errors is constant (equal scatter of the data points). However the varience may chnage as the response    ###
+### of the errors is constant (equal scatter of the data points). However the variance may change as the response    ###
 ### (y) is changing. We have heteroscedasticity, when that change is systematic, follows a pattern. Typically, it    ###
-### produces a distinctive fan or cone shape in residual plots. It can also impact the accuracy of the coeficients   ###                                                 ###
+### produces a distinctive fan or cone shape in residual plots. It can also impact the accuracy of the coefficients  ###                                                 ###
 ########################################################################################################################
-#for this example we will use the cars dataset instead, as our data does not have clear indications of heteroscedasticity
+# For this example we will use the cars dataset instead, as our data does not have clear indications of
+# heteroscedasticity not enough variance to justify changes in data.
 install.packages("Ecdat")
 library(Ecdat)
 #load our data set
 data("Bwages", package = "Ecdat") 
 ?Bwages
 lm.het_fit <- lm(wage ~ school, data=Males)
-#we can use the following visualizations
-#scatterplot
-#we can see a cone shape which may indicate heteroscedasticity
+# We can use the following visualizations
+# Scatterplot
+# We can see a cone shape which may indicate heteroscedasticity
 plot( Bwages$edu, Bwages$wage)
-#residuals/fitted is of interest
+# Residuals/fitted is of interest
 par(mfrow = c(2,2)) 
 plot(lm.het_fit)
-#it indicates heteroscedasticity, as there is a curve, the X values do not look random
+# It indicates heteroscedasticity, as there is a curve, the X values do not look random
 
-# Breusch-Pagan test for a more algorithmic aproach
+# Breusch-Pagan test for a more algorithmic approach
 install.packages("lmtest")
 library(lmtest)
-#p value is very small so we can reject the H0, there is heteroscedasticity
+# p value is very small so we can reject the H0, there is heteroscedasticity
 bptest(lm.het_fit)
 
-#So what do we do?? We can try and identify why this is happening, why the varience increase with the education and 
-#include this change in our model in order to optimize it
-#from domain knowledge we can say that individuals with hiegher education, have more choise in what to do. For example 
-#they may prioritize making money or having a more relaxed job.
-####to be continued
+# So what do we do? We can try and identify why this is happening, why the variance increase with the education and 
+#include this change in our model in order to optimize it.
 
+# From domain knowledge we can say that individuals with higher education, have more choice in what to do. For example 
+# they may prioritize making money or having a more relaxed job.
+# So we can calculate the rate at which it increases and add this as a coefficient of x that describes the variance:
+# for yi = a + bxi + ei (where ei is the error) Var(ei|xi) = s^2 * kxi, and not just the standard deviation s^2, this is
+# called weighted regression/least squares WLS. The difference in WLS from OLS (ordinary least squares) is that how much
+# a point can affect the position of the best fit line is not equal, it is dependant on the variance associated with the
+# particular x if it is a point of high variance it will affect the line less, if it is of low variance it will have a
+# greater affect.
+# As a result we get a better model.
 
-#######################################################################################################################
+# Other approaches where the heteroscedasticity is less systematic we can try data transformations such us logs, or sqrt
+# or even a Box-Cox transformation. However, we have to keep in mind how this affects our original model.
+########################################################################################################################
 
 ####################################################### Outliers #######################################################
 
@@ -388,22 +397,22 @@ summary(lm.fitAll2)$r.squared
 # Are there other factors describing the tax, that we have not included. Could we use them for the price prediction
 # instead of tax?
 
-#Statistically, we can find out if the change in a restricted model (where a variable is removed, in this case a model
-#without tax) is significant using the F-statistic.
-#first we whould calculate the SSR (regression sum of squared errors) for the unrestricted and restricted model
+# Statistically, we can find out if the change in a restricted model (where a variable is removed, in this case a model
+# without tax) is significant using the F-statistic.
+# First we would calculate the SSR (regression sum of squared errors) for the unrestricted and restricted model
 summary(lm.fitAll)
 SSRun <- anova(lm.fitAll)["Residuals","Sum Sq"]
 SSRre <- anova(lm.fitAllMinusTax)["Residuals","Sum Sq"]
-#the f stat is given by:
+# The f stat is given by:
 n <- nrow(Boston)
 p <- length(Boston)
 Fstat <- ((SSRre - SSRun)/p) / (SSRun/(n - p - 1))
-#from the f distribution we can find a critical value that represents the point separating the curve to the rejection 
-#aeria of a=0.05 like we do with t distibution (see hypothesis testing repo)
+# From the f distribution we can find a critical value that represents the point separating the curve to the rejection 
+# area of a=0.05 like we do with t distribution (see hypothesis testing repo)
 Fcrit <- qf(.95, p, n - p - 1)
-#the Fstat falls under the rejection aeria and so we can accept the H0, removing the tax does produce a 
-#significant change
-#we can do this in r simply using the following code
+# The Fstat falls under the rejection area and so we can accept the H0, removing the tax does produce a significant
+# change.
+# We can do this in r simply using the following code.
 anova(lm.fitAll, lm.fitAllMinusTax)
 ################################################## Interaction terms ###################################################
 
@@ -442,35 +451,76 @@ summary(lm.allPairsInteractions)
 ####################################### Non-linear transformations of predictors #######################################
 
 ########################################################################################################################
-### A common optimization technique when dealing with lineaar regression is polynomial transformation of some the    ###
-### the predictor (e.g y = a + b*x +c*x^2). This is polynomial regression, and is still a linea model. This is use-  ###
-### full since oftenly a relationship between variables is non linear, and this may be realized using scatterplots   ###
+### A common optimization technique when dealing with linear regression is polynomial transformation of some the     ###
+### predictor (e.g y = a + b*x +c*x^2). This is polynomial regression, and is still a linear model. This is useful   ###
+### since often a relationship between variables is non linear, and this may be realized using scatterplots.         ###
 ########################################################################################################################
 
-#lets use the example of lstat and medv
- plot(Boston$lstat,Boston$medv)
-# we can see that the scatterplot follows a curve, wich indicates that polynomials whould be effective
-#lets compare the two
+# Lets use the example of lstat and medv
+plot(Boston$lstat, Boston$medv)
+# We can see that the scatterplot follows a curve, which indicates that polynomials would be effective
+# Lets compare the two
 
 lm.linearRegression <- lm(medv~ lstat, data = Boston)
 lm.PolynomialRegression <- lm(medv~ lstat + I(lstat^2), data = Boston)
 anova(lm.linearRegression, lm.PolynomialRegression)
-#the anova tested the H0 where the models both fit the data equally(as explained above). The F-satistic associated 
-#produced a very small providing enough evidence to reject the Ho. 
+# The anova tested the H0 where the models both fit the data equally(as explained above). The F-statistic associated 
+# produced a very small providing enough evidence to reject the Ho. 
 
-#we can visulize this,
+# We can visualise this:
 newdat = data.frame(lstat = seq(min(Boston$lstat), max(Boston$lstat), length.out = 100))
 newdat$pred = predict(fit, newdata = newdat)
 plot(medv ~ lstat, data = Boston)
 with(newdat, lines(x = lstat, y = pred))
 abline(lm(medv~ lstat, data = Boston), col="red")
-#it is clear from the graph that the black line fits the data much better
+# It is clear from the graph that the black line fits the data much better
+
+
+
+################################################ Qualitative Predictors ################################################
+
+########################################################################################################################
+### Up until now we have dealt with numbers, what if one of our predictors was qualitative (e.g. sex, colour, level  ###
+### of satisfaction). To use such a variable in LR we have to assign a dummy number/factor/enumeration, just some    ###
+### short of number that will always be associated with one particular response (e.g female = 1, male = 0).          ###
+########################################################################################################################
+
+library("ISLR")
+# We use this dataset for this example, this is taken from the book cited bellow
+?Carseats
+# R creates dummy values for qualitative predictors automatically
+lm.fitQual <- lm(Sales ~., data = Carseats)
+summary(lm.fitQual)
+#we can see those dummy values using the following code
+attach(Carseats)
+contrasts(ShelveLoc)
+
+################################################ Most useful Resources #################################################
+
+## Books
+# ***highly recommended*** #
+# James, G., Witten, D., Hastie, T. and Tibshirani, R. (n.d.). An introduction to statistical learning. USA: Springer.
+
+## YouTube channels:
+# Ben Lambert
+# statisticsfun
+# khan academy
+# thatRnerd
+# MarinStatsLectures-R Programming & Statistics
+
+## Websites
+# R documentation
+# CRAN R
+# Rbubs
+# Statistics How To
+# statmethods.net
+
 
     #
    ##
   # #
  #  # # # # # # # # # # # # # # #
-#       To Be Continued #   #   #  https://www.youtube.com/watch?v=cPCLFtxpadE
+#       To Be Continued #   #   #  https://www.youtube.com/watch?v=cPCLFtxpadE ...more models coming soon...
  #  # # # # # # # # # # # # # # #
   # #
    ##
