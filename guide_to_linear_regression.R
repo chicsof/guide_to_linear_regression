@@ -1,14 +1,21 @@
+
+# GUIDE TO LINEAR REGRESSION
+
 ################################################## Creating the model ##################################################
 
 ########################################################################################################################
-### the linear model is the best fit line among our points, this is the line where the sum of the squared distance   ###
-### of each point is minimized (basically the line that is on average closer to each data point) This is always      ###
-### calculated with the use of software, but it is useful to know this is derived from calculating where the         ###
-### derivative is close to 0 (minimum of the function of the equation of the sum of the distances).                  ###
-### (In more complicated models, where the gradient cannot be calculated easily, gradient decent is often used for   ###
-### optimizing the model, where a local minimum is instead found)                                                    ###
+### the linear is usufull for studing the relationship of predictors (dependant variable, x values) to a reaction    ###
+### (independant variable, y value). This is called interference, the coefficiant of each predictor will show the    ###
+### strenght and direction of that predictor (how mach of an effect it has and whether it is a possitive or negative ###
+### relationship). It may also be used for predicting the y for specified x values. It is of the form                ###
+### y= a + bx + cx+...+nx + e, where  a is the intercept to the y axis, c to n are the coefficients, x are the       ###
+### predictors and e is some error. We gather a sample of data wich we use to estimate our coefficients. The         ###
+### coefficents are estimated using the least squared method. We plot a line of the form y= a + bx + cx+...+nx + e,  ###
+### that minimizes the distance of our true y values for each x from the predicted by that line y(basically the line ###
+### that is on average closer to each data point). That line represent the mean/ expected value for each x.          ###
 ########################################################################################################################
 
+# We will create a linear model in this example
 # Libraries
 install.packages("MASS")
 install.packages("ISLR")
@@ -19,48 +26,55 @@ library(ISLR)
 # as rm rooms in the house and age of the house, we want to make a linear regression model that uses those values as
 # predictors to predict the response, value of the house.
 ?Boston
-
+# not all the avalable attributes always make for good predictors. For example we might have something like first name of landlord
+# that does not change the price as much. We say that those attributes will not have a significant coefficient, their coefficient 
+# will be close to zero.
 
 # To identify the predictors that can give us the best price prediction we can start by bringing in one by one our
-# attributes and comparing performance (forward approach), starting with all and removing one by one (backward), or a
+# attributes and comparing performance (forward approach), or starting with all and removing one by one (backward), or even a
 # mix.
 
 # We will start with the first approach and analyse our model
-# We are bringing in rm
+# We are bringing in rm (rooms)
 # This creates a linear model for medv as a function of rm
 lm.rm_fit <- lm(medv~rm, data = Boston)
-# This will give as the basic information of the model
+# This will give as the basic information of the model, such us the coefficient of our predictors and the intercept
 summary(lm.rm_fit )
 # We can see that rm is of high significance, it has a very small p-value 
-# (this means there is only a very small probability that the H0, rm has no effect on price is true, see project
-# Hypothesis testing and understanding p values for more info).
+# (this means there is only a very small probability that the H0, rm has no effect on price is true).
 # We also get the intercept and coefficient of the fit line so we can see that the approximated line is of the form:
 # y = 9x - 35
-
-
 
 ###################################################### R-squared #######################################################
 
 ########################################################################################################################
 ### We can use the R-square value (coefficient of determination), as a performance indicator. It measures the        ###
-### percentage of variance of our points that cannot be described by the regression line.                            ###
+### percentage of variance of our points, that can be described by the regression line.                              ###
+### To find that value we calculate the total variation not decribed by the line: by deviding a meause of the        ###
+### disctance of our points to the line, to a measure of the distance of our points from the mean.The rest of the    ###
+### variation whill be discribed by our model so we can simple take 1 minus the result. This basicly will show       ###
+### how much better our model is from just predicting using the mean.                                                ###
 ########################################################################################################################
 
-# We could calculate it by:
-# measuring the square error. That is how far our points are by the line (how far y for each x is from estimated y):
-# according to our estimated line we can get the estimated y from:
-# we could also use the build in function 'predict' but this makes it simpler for now
+
+
+# We can get the meausere of the disctance of our points to the line by calculating the sum of squared error.
+# That is how far our points are by the line (how far the true y for each x is from estimated by the line y):
+# Since we previously calculated our coeefients for the line we can use the following to get the y estimated by the line 
 yForX <- function(x){
   9 * x - 35
-}
+}# we could also use the build in function 'predict' but this makes it simpler for now
+
 # The squared error would be their squared sum, where Boston$medv is the actual y 
 SELine <- sum( (Boston$medv - yForX(Boston$rm) ) ^ 2)
 SELine
-# We can calculate the total variation of y, that would be the squared difference of each y from the mean of y
+
+# The measure of the distance of our points from the mean is given by the squared difference of each y from the mean of y
 meanOfY <- mean(Boston$medv)
 SEy <- sum( (Boston$medv - meanOfY ) ^ 2)
 SEy
-# Now we can calculate the percentage of the total variation SEy not described by SELine, the variation from our line
+
+# Now we can calculate the percentage of the total variation not described by our line,
 DescribedByLine <- SELine / SEy
 DescribedByLine
 # So the R-square, the percentage not described would be :
@@ -87,11 +101,11 @@ summary(lm.fitAll)
 ################################################# CONFIDENCE INTERVALS #################################################
 
 ########################################################################################################################
-### this is important in order to determine if a coefficient is significant (far enough from zero b !=0) so that we  ###
-### can assume the attribute is a predictor (y = bx...).Since  we are only using a sample to find the mean (best fit ###
-### line) we need to account for some error. Confidence intervals can measure the range for the true mean of the     ###
-### population we are studying (or expected value of y given by the regression) with a given % accuracy for each x.  ###
-###        **They help us find a range at which the true regression line (mean) of the population would be.**        ###
+###       **They help us find a range whithin which the true regression line of the population would be.**           ###
+### This is because we have used a SAMPLE to approximate the true coefficients and draw our regression line.         ###
+### Doing that creates some error, our true mean is +/- that error, this is called the confidence interval.          ###
+### It is important to get the confidence interval for each of our estimated coefficients in order to determine      ###
+### how significant their true values are(how far from zero).                                                        ###
 ########################################################################################################################
 
 # The intercept and coefficient are approximated using a sample of nrow(Boston) samples
@@ -293,7 +307,7 @@ BostonSubSet[influential ]
 #######################################################################################################################
 
 
-##################################################### Correlation ######################################################
+########### Correlation ###########################
 # We can first look at some bivariate approaches (measuring the correlation of each pair of two predictors) the
 # correlation factor is a simple way of doing this, a value from -1 to 1 showing direction and strength of the
 # relationship
@@ -328,7 +342,7 @@ r
 # cancel out with the sum of ( y - meanY) and we will get a very small value.
 
 
-######################################## Sample Correlation Coef to True value #########################################
+########## Sample Correlation Coef to True value #########################################
 # We have calculated a the correlation coefficient of a sample, we need to test if that is enough evidence to prove that
 # the true correlation coefficient is far from zero (Ha)
 
@@ -343,7 +357,7 @@ cor.test(Boston$crim, Boston$tax)
 t <- (r * sqrt(nrow(Boston) - 2))/sqrt(1 - r ^ 2)
 # Area > t and Area < t
 p <- pt(q = t/2, df = (nrow(Boston) - 1), lower.tail = FALSE) + pt(q = -t/2, df = (nrow(Boston) - 1), lower.tail = TRUE)
-#################
+################# Corelation Matrix################
 
 # To get the complete correlation matrix for (all the pairs) 
 cor(Boston)
@@ -359,7 +373,7 @@ install.packages("GGally")
 library(GGally)
 ggpairs(lm.fitMultivariet)
 
-################################################## Variance Inflation ##################################################
+######################### Variance Inflation ###########################
 # Scatterplots and correlation matrixes are useful, however they only look at the relations between pairs (bivariate),
 # we can use variance inflation VIF to account for interaction within multiple attributes
 
@@ -496,33 +510,4 @@ summary(lm.fitQual)
 attach(Carseats)
 contrasts(ShelveLoc)
 
-################################################ Most useful Resources #################################################
 
-## Books
-# ***highly recommended*** #
-# James, G., Witten, D., Hastie, T. and Tibshirani, R. (n.d.). An introduction to statistical learning. USA: Springer.
-
-## YouTube channels:
-# Ben Lambert
-# statisticsfun
-# khan academy
-# thatRnerd
-# MarinStatsLectures-R Programming & Statistics
-
-## Websites
-# R documentation
-# CRAN R
-# Rbubs
-# Statistics How To
-# statmethods.net
-
-
-    #
-   ##
-  # #
- #  # # # # # # # # # # # # # # #
-#       To Be Continued #   #   #  https://www.youtube.com/watch?v=cPCLFtxpadE ...more models coming soon...
- #  # # # # # # # # # # # # # # #
-  # #
-   ##
-    #
